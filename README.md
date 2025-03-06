@@ -98,6 +98,14 @@ docker run --rm \
   
 ```
 
+## Publish
+
+Tag new version and publish release
+```bash
+git tag -a -m "Release notes" v1.0
+git push --follow-tags
+```
+
 ---
 
 **Note**: Always test with non-production environments first. Maintain proper IAM role permissions following least privilege principles.
