@@ -32,10 +32,12 @@ if [ -z "$INPUT_ROLE" ]; then
 fi
 
 echo "Assuming IAM role..."
+OIDC_TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value')
+
 CREDENTIALS=$(aws sts assume-role-with-web-identity \
   --role-arn $INPUT_ROLE \
   --role-session-name "GitHubActions" \
-  --web-identity-token $ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+  --web-identity-token $OIDC_TOKEN \
   --duration-seconds 900)
 
 export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r .Credentials.AccessKeyId)
