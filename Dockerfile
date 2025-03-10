@@ -1,19 +1,24 @@
-FROM python:3.8-alpine
+FROM alpine:3.21.3
 
-# Install system dependencies
+# Install system dependencies with glibc compatibility
 RUN apk add --no-cache \
     curl \
     jq \
     unzip \
     gcompat \
-    libc6-compat
+    libc6-compat \
+    libstdc++ \
+    libgcc \
+    openssl \
+    python3 \
+    py3-pip \
+    libffi-dev
 
-# Install AWS CLI v2 (version explicite)
-RUN curl -sS -L "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.24.20.zip" -o "awscliv2.zip" \
-    && unzip -q awscliv2.zip \
-    && ./aws/install -i /usr/local/aws-cli -b /usr/local/bin \
-    && rm -rf awscliv2.zip aws \
-    && aws --version
+# Install AWS CLI via pip (version compatible with Alpine)
+RUN pip3 install --no-cache-dir awscli==2.24.20
+
+# Verify installation
+RUN aws --version
 
 # Configuration finale
 RUN adduser -u 1000 -D docker
