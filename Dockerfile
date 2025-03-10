@@ -1,11 +1,12 @@
 FROM python:3.8-alpine
 
-RUN apk add --no-cache jq curl
+RUN apk add --no-cache jq curl bash
 
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && rm -rf awscliv2.zip aws
+RUN curl -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip -q awscliv2.zip \
+    && ./aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli \
+    && rm -rf awscliv2.zip aws \
+    && aws --version
 
 RUN addgroup -g 1000 docker
 

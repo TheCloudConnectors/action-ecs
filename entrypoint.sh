@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -euo pipefail
 
 if [ -z "$INPUT_CLUSTER" ]; then
   echo "INPUT_CLUSTER is not set. Quitting."
@@ -32,17 +32,31 @@ if [ -z "$INPUT_ROLE" ]; then
 fi
 
 echo "Assuming IAM role..."
-OIDC_TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value')
+OIDC_TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -er '.value')
+
+# Valider le jeton
+if [ -z "$OIDC_TOKEN" ]; then
+  echo "❌ Failed to obtain OIDC token"
+  exit 1
+fi
 
 CREDENTIALS=$(aws sts assume-role-with-web-identity \
-  --role-arn $INPUT_ROLE \
+  --role-arn "$INPUT_ROLE" \
   --role-session-name "GitHubActions" \
-  --web-identity-token $OIDC_TOKEN \
-  --duration-seconds 900)
+  --web-identity-token "$OIDC_TOKEN" \
+  --duration-seconds 900 \
+  --query 'Credentials' \
+  --output json)
 
-export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r .Credentials.AccessKeyId)
-export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r .Credentials.SecretAccessKey)
-export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r .Credentials.SessionToken)
+# Vérifier les credentials
+if [ -z "$CREDENTIALS" ]; then
+  echo "❌ Failed to assume role"
+  exit 1
+fi
+
+export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r .AccessKeyId)
+export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r .SecretAccessKey)
+export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r .SessionToken)
 
 # Get the current task definition
 echo "Fetching current task definition..."
