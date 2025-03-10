@@ -26,6 +26,22 @@ if [ -z "$INPUT_REGION" ]; then
   INPUT_REGION="us-east-2"
 fi
 
+if [ -z "$INPUT_ROLE" ]; then
+  echo "INPUT_ROLE is not set. Quitting."
+  exit 1
+fi
+
+echo "Assuming IAM role..."
+CREDENTIALS=$(aws sts assume-role-with-web-identity \
+  --role-arn $INPUT_ROLE \
+  --role-session-name "GitHubActions" \
+  --web-identity-token $ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+  --duration-seconds 900)
+
+export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r .Credentials.AccessKeyId)
+export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r .Credentials.SecretAccessKey)
+export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r .Credentials.SessionToken)
+
 # Get the current task definition
 echo "Fetching current task definition..."
 TASK_DEFINITION=$(aws ecs describe-task-definition \

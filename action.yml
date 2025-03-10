@@ -14,6 +14,9 @@ inputs:
   image:
     description: "The new image URI to deploy"
     required: true
+  role:
+    description: "ARN of the IAM role to assume"
+    required: true
   region:
     description: "AWS region"
     required: false
