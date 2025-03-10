@@ -40,25 +40,12 @@ if [ -z "$OIDC_TOKEN" ]; then
   exit 1
 fi
 
-CREDENTIALS=$(aws sts assume-role-with-web-identity \
-  --role-arn "$INPUT_ROLE" \
-  --role-session-name "GitHubActions" \
-  --web-identity-token "$OIDC_TOKEN" \
-  --duration-seconds 900 \
-  --query 'Credentials' \
-  --output json)
+# Utiliser le rôle directement via OIDC sans credentials manuels
+aws configure set web_identity_token_file <(echo "$OIDC_TOKEN")
+aws configure set role_arn "$INPUT_ROLE"
+aws configure set role_session_name "GitHubActions"
 
-# Vérifier les credentials
-if [ -z "$CREDENTIALS" ]; then
-  echo "❌ Failed to assume role"
-  exit 1
-fi
-
-export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r .AccessKeyId)
-export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r .SecretAccessKey)
-export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r .SessionToken)
-
-# Get the current task definition
+# Les appels AWS suivants utiliseront automatiquement le rôle
 echo "Fetching current task definition..."
 TASK_DEFINITION=$(aws ecs describe-task-definition \
   --region $INPUT_REGION \
