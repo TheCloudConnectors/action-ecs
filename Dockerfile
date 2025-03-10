@@ -12,9 +12,15 @@ RUN apk add --no-cache \
     openssl \
     python3 \
     py3-pip \
-    libffi-dev
+    libffi-dev \
+    python3-dev \
+    g++
 
-# Install AWS CLI via pip (version compatible with Alpine)
+# Create virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install AWS CLI in virtual environment
 RUN pip3 install --no-cache-dir awscli==2.24.20
 
 # Verify installation
