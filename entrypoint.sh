@@ -69,11 +69,15 @@ echo "New task definition registered: $TASK_DEFINITION_ARN"
 
 # Update the service with the new task definition
 echo "Updating service to use new task definition..."
-aws ecs update-service \
+if ! aws ecs update-service \
   --region $INPUT_REGION \
   --cluster $INPUT_CLUSTER \
   --service $INPUT_SERVICE \
   --task-definition $TASK_DEFINITION_ARN \
   --force-new-deployment
+then
+  echo "Service update failed"
+  exit 1
+fi
 
-echo "Deployment initiated successfully"
+echo "Service updated successfully"
