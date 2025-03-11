@@ -26,26 +26,27 @@ if [ -z "$INPUT_REGION" ]; then
   INPUT_REGION="us-east-2"
 fi
 
-if [ -z "$INPUT_ROLE" ]; then
-  echo "INPUT_ROLE is not set. Quitting."
+# Nouvelle vérification pour le rôle ARN
+if [ -z "$INPUT_ROLE_ARN" ]; then
+  echo "INPUT_ROLE_ARN is not set. Quitting."
   exit 1
 fi
 
-echo "Assuming IAM role..."
-OIDC_TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -er '.value')
+echo "Assuming role $INPUT_ROLE_ARN..."
+CREDENTIALS=$(aws sts assume-role \
+  --role-arn "$INPUT_ROLE_ARN" \
+  --role-session-name "ECSTaskDeployment" \
+  --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+  --output text)
 
-# Valider le jeton
-if [ -z "$OIDC_TOKEN" ]; then
-  echo "❌ Failed to obtain OIDC token"
-  exit 1
-fi
+AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | awk '{print $1}')
+AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | awk '{print $2}')
+AWS_SESSION_TOKEN=$(echo $CREDENTIALS | awk '{print $3}')
 
-# Utiliser le rôle directement via OIDC sans credentials manuels
-aws configure set web_identity_token_file <(echo "$OIDC_TOKEN")
-aws configure set role_arn "$INPUT_ROLE"
-aws configure set role_session_name "GitHubActions"
+export AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY
+export AWS_SESSION_TOKEN
 
-# Les appels AWS suivants utiliseront automatiquement le rôle
 echo "Fetching current task definition..."
 TASK_DEFINITION=$(aws ecs describe-task-definition \
   --region $INPUT_REGION \

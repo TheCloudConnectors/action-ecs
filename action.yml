@@ -3,24 +3,24 @@ description: "Create a new task definition version and update the service"
 author: The Cloud Connectors
 inputs:
   cluster:
-    description: "The name of the ECS cluster"
+    description: "The name or full ARN (including account ID) of the ECS cluster"
     required: true
   service:
-    description: "The name of the ECS service"
+    description: "The name or full ARN (including account ID) of the ECS service"
     required: true
   task_definition:
-    description: "The name of the existing task definition to update"
+    description: "The name or full ARN (including account ID) of the existing task definition to update"
     required: true
   image:
     description: "The new image URI to deploy"
-    required: true
-  role:
-    description: "ARN of the IAM role to assume"
     required: true
   region:
     description: "AWS region"
     required: false
     default: "us-east-2"
+  role_arn:
+    description: "ARN of the AWS role to assume for deployment"
+    required: true
 runs:
   using: docker
   image: Dockerfile
